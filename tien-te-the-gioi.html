@@ -1,0 +1,1984 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiền Tệ Thế Giới — Báo Tài Chính Toàn Cầu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --paper: #f5f0e8;
+    --gold: #c8922a;
+    --gold-light: #e8c46a;
+    --rust: #8b3a1c;
+    --sage: #3d5c4a;
+    --cream: #faf6ed;
+    --rule: #c8b89a;
+    --muted: #7a6b55;
+    --highlight: #fff3cd;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  /* ─── MASTHEAD ─── */
+  .masthead {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 14px 20px 10px;
+    border-bottom: 4px solid var(--gold);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .masthead-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--rule);
+    letter-spacing: 0.08em;
+  }
+
+  .masthead-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+  }
+
+  .masthead-ticker {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--gold-light);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 80px 20px 70px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '₿ € ¥ £ ₹ ₩ ₽ ₺ ₫ $';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 120px;
+    opacity: 0.04;
+    letter-spacing: 0.3em;
+    line-height: 1;
+    pointer-events: none;
+    font-family: 'Playfair Display', serif;
+    animation: drift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from { transform: translateX(-20px) translateY(-10px); }
+    to   { transform: translateX(20px)  translateY(10px);  }
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 7vw, 88px);
+    font-weight: 900;
+    line-height: 1.0;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.4s forwards;
+  }
+
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--rule);
+    max-width: 560px;
+    margin: 0 auto 36px;
+    opacity: 0;
+    animation: fadeUp 1s 0.6s forwards;
+  }
+
+  .hero-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    opacity: 0;
+    animation: fadeUp 1s 0.8s forwards;
+  }
+
+  .hero-divider span { height: 1px; width: 80px; background: var(--gold); display: block; }
+  .hero-divider i { color: var(--gold); font-style: normal; font-size: 20px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  /* ─── LAYOUT ─── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .section {
+    padding: 70px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section:last-child { border-bottom: none; }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-tag::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: var(--gold);
+    opacity: 0.4;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 900;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  .section-title em { font-style: italic; color: var(--gold); }
+
+  .section-lead {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 48px;
+    max-width: 620px;
+  }
+
+  /* ─── PULL QUOTE ─── */
+  .pullquote {
+    border-left: 5px solid var(--gold);
+    padding: 20px 28px;
+    margin: 40px 0;
+    background: var(--cream);
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-style: italic;
+    color: var(--rust);
+    line-height: 1.5;
+  }
+
+  .pullquote cite {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-style: normal;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline {
+    position: relative;
+    padding-left: 40px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--gold), var(--rule));
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 44px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+
+  .timeline-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -33px;
+    top: 7px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 3px solid var(--paper);
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+
+  .timeline-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .timeline-event {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .timeline-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ─── CURRENCY CARDS ─── */
+  .currency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 24px;
+    margin-top: 10px;
+  }
+
+  .currency-card {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-top: 4px solid var(--gold);
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .currency-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s, transform 0.5s, box-shadow 0.3s;
+  }
+
+  .currency-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 40px rgba(26,18,8,0.15);
+  }
+
+  .currency-card::after {
+    content: attr(data-symbol);
+    position: absolute;
+    right: -10px;
+    bottom: -20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 90px;
+    font-weight: 900;
+    color: var(--gold);
+    opacity: 0.07;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .card-flag { font-size: 32px; margin-bottom: 10px; }
+
+  .card-country {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+
+  .card-rates {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .card-rate {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+
+  .card-rate-label { color: var(--muted); }
+  .card-rate-value { font-weight: 500; color: var(--rust); }
+
+  .card-note {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* ─── CONVERTER ─── */
+  .converter-box {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 48px;
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .converter-box::before {
+    content: '⇄';
+    position: absolute;
+    right: 24px; top: 24px;
+    font-size: 80px;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  .converter-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--gold);
+  }
+
+  .converter-sub {
+    font-size: 14px;
+    color: var(--rule);
+    margin-bottom: 28px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  .conv-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-end;
+  }
+
+  .conv-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .conv-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--rule);
+    letter-spacing: 0.1em;
+  }
+
+  .conv-input, .conv-select {
+    background: rgba(245,240,232,0.08);
+    border: 1px solid rgba(200,180,154,0.3);
+    color: var(--paper);
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .conv-input:focus, .conv-select:focus {
+    border-color: var(--gold);
+  }
+
+  .conv-select option { background: var(--ink); }
+
+  .conv-btn {
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    padding: 14px 28px;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.05em;
+  }
+
+  .conv-btn:hover { background: var(--gold-light); }
+  .conv-btn:active { transform: scale(0.98); }
+
+  .conv-result {
+    margin-top: 20px;
+    padding: 18px;
+    background: rgba(200,146,42,0.1);
+    border-left: 3px solid var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    min-height: 62px;
+    transition: all 0.3s;
+  }
+
+  .conv-result.pop {
+    animation: pop 0.4s ease;
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.02); background: rgba(200,146,42,0.2); }
+    100% { transform: scale(1); }
+  }
+
+  /* ─── INFOGRAPHIC STATS ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 2px solid var(--rule);
+    margin: 40px 0;
+  }
+
+  .stat-box {
+    background: var(--cream);
+    padding: 28px 24px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    line-height: 1.5;
+  }
+
+  /* ─── ARTICLE BODY TEXT ─── */
+  .article-text {
+    max-width: 700px;
+  }
+
+  .article-text p {
+    margin-bottom: 22px;
+    font-size: 16.5px;
+    line-height: 1.85;
+  }
+
+  .article-text p:first-child::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px;
+    font-weight: 900;
+    float: left;
+    line-height: 0.75;
+    margin: 8px 14px 0 0;
+    color: var(--gold);
+  }
+
+  /* ─── 2-COL LAYOUT ─── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  /* ─── INTERESTING FACTS ─── */
+  .fact-list {
+    counter-reset: facts;
+    list-style: none;
+  }
+
+  .fact-list li {
+    counter-increment: facts;
+    padding: 20px 20px 20px 64px;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .fact-list li.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .fact-list li::before {
+    content: counter(facts, decimal-leading-zero);
+    position: absolute;
+    left: 16px;
+    top: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--gold);
+    opacity: 0.6;
+  }
+
+  .fact-list li strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* ─── WORLD MAP REGION ─── */
+  .region-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--rule);
+    margin-bottom: 32px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .region-tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── TABLE ─── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .data-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--rule);
+    padding: 10px 14px;
+    text-align: left;
+  }
+
+  .data-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(200,184,154,0.4);
+    line-height: 1.5;
+  }
+
+  .data-table tr:hover td { background: var(--cream); }
+
+  .data-table .symbol {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--gold);
+  }
+
+  .data-table .rate {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--rust);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--ink);
+    color: var(--rule);
+    text-align: center;
+    padding: 48px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    line-height: 2;
+  }
+
+  footer .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s, transform 0.7s;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 600px) {
+    .masthead { flex-direction: column; gap: 4px; }
+    .converter-box { padding: 28px 20px; }
+    .conv-row { flex-direction: column; }
+    .currency-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ─── DECORATIVE RULE ─── */
+  .ornament {
+    text-align: center;
+    color: var(--gold);
+    font-size: 22px;
+    margin: 40px 0;
+    opacity: 0.6;
+    letter-spacing: 12px;
+  }
+
+  /* ─── HIGHLIGHTED BOX ─── */
+  .highlight-box {
+    background: var(--highlight);
+    border: 1px solid var(--gold-light);
+    border-left: 5px solid var(--gold);
+    padding: 20px 24px;
+    margin: 30px 0;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .highlight-box strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    color: var(--rust);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .bar-chart { margin: 24px 0; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .bar-label {
+    width: 130px;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(200,184,154,0.3);
+    border-radius: 0;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--rust));
+    width: 0;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-value {
+    width: 50px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--rust);
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-date">PHIÊN BẢN SỐ · THÁNG 3, 2025</div>
+  <div class="masthead-title">₮ TIỀN TỆ TOÀN CẦU ₮</div>
+  <div class="masthead-ticker">USD · EUR · JPY · GBP · VND</div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Báo chuyên đề tài chính quốc tế</div>
+  <h1 class="hero-headline">Tiền Tệ<br><em>Thế Giới</em></h1>
+  <p class="hero-sub">Hành trình từ vỏ sò, vàng thỏi đến tiền kỹ thuật số — câu chuyện của những đồng tiền định hình nền văn minh nhân loại</p>
+  <div class="hero-divider">
+    <span></span>
+    <i>✦</i>
+    <span></span>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<section style="background: var(--sage); padding: 0;">
+  <div class="container">
+    <div class="stats-grid" style="background: transparent; border: none; gap: 0;">
+      <div class="stat-box" style="background: var(--sage); color: var(--paper);">
+        <div class="stat-number" style="color: var(--gold-light);">180+</div>
+        <div class="stat-label" style="color: rgba(245,240,232,0.7);">LOẠI TIỀN TỆ<br>TRÊN THẾ GIỚI</div>
+      </div>
+      <div class="stat-box" style="background: var(--sage); color: var(--paper);">
+        <div class="stat-number" style="color: var(--gold-light);">$7.5T</div>
+        <div class="stat-label" style="color: rgba(245,240,232,0.7);">GIAO DỊCH FX<br>MỖI NGÀY (USD)</div>
+      </div>
+      <div class="stat-box" style="background: var(--sage); color: var(--paper);">
+        <div class="stat-number" style="color: var(--gold-light);">3000+</div>
+        <div class="stat-label" style="color: rgba(245,240,232,0.7);">NĂM LỊCH SỬ<br>TIỀN ĐÚC KIM LOẠI</div>
+      </div>
+      <div class="stat-box" style="background: var(--sage); color: var(--paper);">
+        <div class="stat-number" style="color: var(--gold-light);">44%</div>
+        <div class="stat-label" style="color: rgba(245,240,232,0.7);">GIAO DỊCH DÙNG<br>ĐỒNG USD</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LỊCH SỬ -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Chương I</div>
+    <h2 class="section-title">Lịch Sử Ra Đời<br><em>Của Tiền Tệ</em></h2>
+    <p class="section-lead">Từ hàng đổi hàng đến blockchain — một hành trình hàng nghìn năm của loài người tìm kiếm phương tiện trao đổi hoàn hảo.</p>
+
+    <div class="two-col">
+      <div class="article-text reveal">
+        <p>Trước khi tiền tệ xuất hiện, con người giao thương bằng phương thức hàng đổi hàng — đổi thóc lấy vải, đổi cá lấy rìu đá. Nhưng hệ thống này chứa đầy bất tiện: phải tìm đúng người có cái mình cần và cần cái mình có.</p>
+        <p>Khoảng năm 3000 TCN, người Lưỡng Hà bắt đầu dùng bạc nén làm phương tiện trao đổi. Tiền xu bằng đồng lần đầu xuất hiện tại Lydia (nay là Thổ Nhĩ Kỳ) vào khoảng thế kỷ VII TCN, đánh dấu bước ngoặt lớn trong lịch sử thương mại.</p>
+        <p>Trung Quốc là nơi sản sinh ra tiền giấy — triều nhà Đường (thế kỷ VII) dùng "phi tiền" (tiền bay) để thay thế đồng xu nặng nề. Đến thế kỷ XI, nhà Tống chính thức phát hành tiền giấy nhà nước đầu tiên trên thế giới.</p>
+      </div>
+      <div class="reveal" style="transition-delay: 0.2s;">
+        <div class="pullquote">
+          "Tiền không tạo ra hạnh phúc, nhưng thiếu tiền thì chắc chắn gây ra khổ đau."
+          <cite>— Daniel Kahneman, Kinh tế học hành vi</cite>
+        </div>
+        <div class="highlight-box">
+          <strong>📜 Biết không?</strong>
+          Đồng tiền giấy đầu tiên ở châu Âu được Ngân hàng Stockholm phát hành năm 1661 — trước cả Ngân hàng Anh và Ngân hàng Pháp hàng thế kỷ.
+        </div>
+      </div>
+    </div>
+
+    <div class="ornament">✦ ✦ ✦</div>
+
+    <!-- TIMELINE -->
+    <div class="section-tag" style="margin-top: 0;">Niên đại tiền tệ</div>
+    <div class="timeline" style="margin-top: 28px;">
+      <div class="timeline-item">
+        <div class="timeline-year">~3000 TCN</div>
+        <div class="timeline-event">Bạc nén Lưỡng Hà</div>
+        <div class="timeline-desc">Người Sumer dùng bạc và lúa mạch làm đơn vị trao đổi được tiêu chuẩn hóa. Đây là tiền thân của hệ thống tài chính ngân hàng.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~650 TCN</div>
+        <div class="timeline-event">Tiền xu kim loại đầu tiên — Lydia</div>
+        <div class="timeline-desc">Vương quốc Lydia (Thổ Nhĩ Kỳ) đúc tiền từ hợp kim electrum (vàng-bạc tự nhiên), in hình sư tử — đây là tiền xu sớm nhất được xác nhận trong lịch sử.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~500 TCN</div>
+        <div class="timeline-event">Tiền đồng Trung Quốc — đồng xu lỗ vuông</div>
+        <div class="timeline-desc">Triều đại nhà Chu đúc tiền đồng hình dao và hình xẻng. Sau đó nhà Tần thống nhất thành tiền xu tròn lỗ vuông — biểu tượng "trời tròn đất vuông".</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">618 SCN</div>
+        <div class="timeline-event">Tiền giấy "Phi tiền" — nhà Đường, Trung Quốc</div>
+        <div class="timeline-desc">Các thương nhân gửi tiền đồng ở thủ đô, nhận giấy nhận tiền để đi lại nhẹ nhàng hơn. Đây là nguyên mẫu của séc ngân hàng và tiền giấy.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1252</div>
+        <div class="timeline-event">Đồng Florin vàng — Florence, Ý</div>
+        <div class="timeline-desc">Cộng hòa Florence đúc đồng Florin — đồng tiền vàng tiêu chuẩn đầu tiên của châu Âu thời Trung Cổ, thúc đẩy thương mại xuyên châu lục.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1661</div>
+        <div class="timeline-event">Tiền giấy châu Âu đầu tiên — Thụy Điển</div>
+        <div class="timeline-desc">Stockholms Banco phát hành tờ tiền giấy Kreditivsedlar. Tuy ngân hàng phá sản sau đó, nhưng ý tưởng này đã thay đổi tài chính châu Âu mãi mãi.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1944</div>
+        <div class="timeline-event">Hiệp định Bretton Woods — Bá chủ của USD</div>
+        <div class="timeline-desc">44 quốc gia đồng thuận neo tỷ giá vào USD, USD neo vào vàng ($35/oz). Đây là nền tảng của hệ thống tiền tệ quốc tế hiện đại.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1999</div>
+        <div class="timeline-event">Đồng Euro ra đời</div>
+        <div class="timeline-desc">11 quốc gia châu Âu chính thức dùng Euro — tiền tệ chung lớn nhất lịch sử, thách thức vị thế độc tôn của USD trong thương mại toàn cầu.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">2009</div>
+        <div class="timeline-event">Bitcoin — Tiền kỹ thuật số phi tập trung</div>
+        <div class="timeline-desc">Satoshi Nakamoto tung ra Bitcoin — đồng tiền mã hóa đầu tiên, không do ngân hàng trung ương nào phát hành, mở ra kỷ nguyên tài chính phi tập trung.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CÁC ĐỒNG TIỀN LỚN -->
+<section class="section" style="background: var(--cream);">
+  <div class="container">
+    <div class="section-tag">Chương II</div>
+    <h2 class="section-title">Các Đồng Tiền<br><em>Lớn Nhất Thế Giới</em></h2>
+    <p class="section-lead">Tỷ giá tham khảo (ước tính đầu năm 2025). Tỷ giá thực tế thay đổi liên tục theo thị trường.</p>
+
+    <div class="currency-grid">
+
+      <div class="currency-card reveal" data-symbol="$">
+        <div class="card-flag">🇺🇸</div>
+        <div class="card-country">Hoa Kỳ</div>
+        <div class="card-name">Đô-la Mỹ<br><small style="font-weight:400; font-size:14px; color:var(--muted)">United States Dollar</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">USD / $</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">1.00 USD</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~25,400 VND</span></div>
+        </div>
+        <p class="card-note">Đồng tiền dự trữ quốc tế số một. Chiếm ~44% giao dịch ngoại hối toàn cầu. Được phát hành bởi Cục Dự trữ Liên bang (Fed) từ năm 1913.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="€" style="transition-delay:0.1s">
+        <div class="card-flag">🇪🇺</div>
+        <div class="card-country">Liên minh châu Âu (20 quốc gia)</div>
+        <div class="card-name">Euro<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Euro</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">EUR / €</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 EUR =</span><span class="card-rate-value">~1.08 USD</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 EUR =</span><span class="card-rate-value">~27,400 VND</span></div>
+        </div>
+        <p class="card-note">Tiền tệ chung của Eurozone. Ra đời năm 1999 (tiền mặt từ 2002). Là đồng tiền dự trữ lớn thứ 2 thế giới, chiếm ~20% dự trữ toàn cầu.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="¥" style="transition-delay:0.2s">
+        <div class="card-flag">🇯🇵</div>
+        <div class="card-country">Nhật Bản</div>
+        <div class="card-name">Yên Nhật<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Japanese Yen</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">JPY / ¥</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~150 JPY</span></div>
+          <div class="card-rate"><span class="card-rate-label">100 JPY =</span><span class="card-rate-value">~16,900 VND</span></div>
+        </div>
+        <p class="card-note">Đồng tiền được giao dịch nhiều thứ 3 thế giới. Nổi tiếng là "đồng tiền trú ẩn an toàn" khi thị trường biến động. Ngân hàng Nhật Bản (BOJ) kiểm soát cung tiền.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="£" style="transition-delay:0.3s">
+        <div class="card-flag">🇬🇧</div>
+        <div class="card-country">Vương quốc Anh</div>
+        <div class="card-name">Bảng Anh<br><small style="font-weight:400; font-size:14px; color:var(--muted)">British Pound Sterling</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">GBP / £</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 GBP =</span><span class="card-rate-value">~1.27 USD</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 GBP =</span><span class="card-rate-value">~32,200 VND</span></div>
+        </div>
+        <p class="card-note">Đồng tiền lâu đời nhất vẫn còn lưu hành, ra đời từ thế kỷ VIII. Từng là đồng tiền dự trữ toàn cầu thống trị trước khi USD thay thế sau WWII.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="元" style="transition-delay:0.1s">
+        <div class="card-flag">🇨🇳</div>
+        <div class="card-country">Cộng hòa Nhân dân Trung Hoa</div>
+        <div class="card-name">Nhân dân tệ<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Chinese Yuan Renminbi</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">CNY / ¥ / 元</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~7.24 CNY</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 CNY =</span><span class="card-rate-value">~3,500 VND</span></div>
+        </div>
+        <p class="card-note">Tiền tệ của nền kinh tế lớn thứ 2 thế giới. IMF đưa CNY vào rổ SDR năm 2016. Trung Quốc đang thúc đẩy quốc tế hóa đồng nhân dân tệ.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="₩" style="transition-delay:0.2s">
+        <div class="card-flag">🇰🇷</div>
+        <div class="card-country">Hàn Quốc</div>
+        <div class="card-name">Won Hàn Quốc<br><small style="font-weight:400; font-size:14px; color:var(--muted)">South Korean Won</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">KRW / ₩</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~1,340 KRW</span></div>
+          <div class="card-rate"><span class="card-rate-label">1,000 KRW =</span><span class="card-rate-value">~18,900 VND</span></div>
+        </div>
+        <p class="card-note">Tiền tệ của "Kỳ tích sông Hàn". Won phục hồi mạnh mẽ sau cuộc khủng hoảng tài chính châu Á 1997. Hàn Quốc là nước đi đầu về thanh toán không tiền mặt.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="₹" style="transition-delay:0.3s">
+        <div class="card-flag">🇮🇳</div>
+        <div class="card-country">Ấn Độ</div>
+        <div class="card-name">Rupee Ấn Độ<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Indian Rupee</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">INR / ₹</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~83 INR</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 INR =</span><span class="card-rate-value">~306 VND</span></div>
+        </div>
+        <p class="card-note">Tiền tệ của nền kinh tế lớn thứ 5 thế giới và dân số đông nhất. Ký hiệu ₹ được thiết kế năm 2010, lấy cảm hứng từ chữ "Ra" trong tiếng Devanagari.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="₽" style="transition-delay:0.1s">
+        <div class="card-flag">🇷🇺</div>
+        <div class="card-country">Nga</div>
+        <div class="card-name">Rúp Nga<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Russian Ruble</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">RUB / ₽</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~89 RUB</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 RUB =</span><span class="card-rate-value">~285 VND</span></div>
+        </div>
+        <p class="card-note">Tiền tệ lâu đời nhất châu Âu, từ thế kỷ XIII. Đã trải qua nhiều biến động lịch sử: siêu lạm phát 1990s, khủng hoảng 2014, và các lệnh trừng phạt năm 2022.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="A$" style="transition-delay:0.2s">
+        <div class="card-flag">🇦🇺</div>
+        <div class="card-country">Úc</div>
+        <div class="card-name">Đô-la Úc<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Australian Dollar</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">AUD / A$</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 AUD =</span><span class="card-rate-value">~0.65 USD</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 AUD =</span><span class="card-rate-value">~16,500 VND</span></div>
+        </div>
+        <p class="card-note">Được mệnh danh là "đồng tiền hàng hóa" vì phụ thuộc vào xuất khẩu tài nguyên thiên nhiên. AUD là một trong 5 đồng tiền được giao dịch nhiều nhất thế giới.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="C$" style="transition-delay:0.3s">
+        <div class="card-flag">🇨🇦</div>
+        <div class="card-country">Canada</div>
+        <div class="card-name">Đô-la Canada<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Canadian Dollar</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">CAD / C$</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 CAD =</span><span class="card-rate-value">~0.74 USD</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 CAD =</span><span class="card-rate-value">~18,800 VND</span></div>
+        </div>
+        <p class="card-note">Biệt danh "Loonie" vì đồng xu 1 CAD in hình chim loon. Đồng tiền dự trữ quốc tế thứ 6. Tỷ giá thường bị ảnh hưởng bởi giá dầu mỏ toàn cầu.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="﷼" style="transition-delay:0.1s">
+        <div class="card-flag">🇸🇦</div>
+        <div class="card-country">Ả Rập Saudi</div>
+        <div class="card-name">Riyal Saudi<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Saudi Riyal</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">SAR / ﷼</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">3.75 SAR (cố định)</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 SAR =</span><span class="card-rate-value">~6,773 VND</span></div>
+        </div>
+        <p class="card-note">Neo cứng vào USD từ năm 1986. Là tiền tệ quan trọng trong "petrodollar" — hệ thống bán dầu bằng USD. Dự trữ ngoại tệ Saudi đạt hơn $400 tỷ USD.</p>
+      </div>
+
+      <div class="currency-card reveal" data-symbol="₫" style="transition-delay:0.2s; border-top-color: var(--rust);">
+        <div class="card-flag">🇻🇳</div>
+        <div class="card-country">Việt Nam</div>
+        <div class="card-name">Đồng Việt Nam<br><small style="font-weight:400; font-size:14px; color:var(--muted)">Vietnamese Dong</small></div>
+        <div class="card-rates">
+          <div class="card-rate"><span class="card-rate-label">Ký hiệu</span><span class="card-rate-value">VND / ₫</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 USD =</span><span class="card-rate-value">~25,400 VND</span></div>
+          <div class="card-rate"><span class="card-rate-label">1 VND =</span><span class="card-rate-value">1 VND (chuẩn)</span></div>
+        </div>
+        <p class="card-note">Ra đời năm 1978, thống nhất tiền tệ hai miền Nam-Bắc. Đồng tiền polymer (nhựa) bền, khó làm giả từ 2003. Ngân hàng Nhà nước Việt Nam quản lý theo cơ chế thả nổi có kiểm soát.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CONVERTER -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Công cụ</div>
+    <h2 class="section-title">Bộ Chuyển Đổi<br><em>Tỷ Giá</em></h2>
+    <p class="section-lead">Quy đổi ước tính dựa trên tỷ giá tham khảo đầu năm 2025. Không dùng cho mục đích giao dịch tài chính.</p>
+
+    <div class="converter-box reveal">
+      <div class="converter-title">Chuyển đổi tiền tệ</div>
+      <div class="converter-sub">TỶ GIÁ THAM KHẢO · CẬP NHẬT THÁNG 3/2025</div>
+
+      <div class="conv-row">
+        <div class="conv-group">
+          <label class="conv-label">SỐ TIỀN</label>
+          <input class="conv-input" type="number" id="convAmount" value="100" min="0" step="any">
+        </div>
+        <div class="conv-group" style="flex:0 0 150px;">
+          <label class="conv-label">TỪ</label>
+          <select class="conv-select" id="convFrom">
+            <option value="USD">USD – Đô-la Mỹ</option>
+            <option value="EUR">EUR – Euro</option>
+            <option value="JPY">JPY – Yên Nhật</option>
+            <option value="GBP">GBP – Bảng Anh</option>
+            <option value="CNY">CNY – Nhân dân tệ</option>
+            <option value="KRW">KRW – Won HQ</option>
+            <option value="INR">INR – Rupee Ấn</option>
+            <option value="AUD">AUD – Đô-la Úc</option>
+            <option value="CAD">CAD – Đô-la CA</option>
+            <option value="RUB">RUB – Rúp Nga</option>
+            <option value="SAR">SAR – Riyal Saudi</option>
+            <option value="VND" selected>VND – Đồng VN</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div class="conv-group">
+          <label class="conv-label">SANG</label>
+          <select class="conv-select" id="convTo">
+            <option value="USD" selected>USD – Đô-la Mỹ</option>
+            <option value="EUR">EUR – Euro</option>
+            <option value="JPY">JPY – Yên Nhật</option>
+            <option value="GBP">GBP – Bảng Anh</option>
+            <option value="CNY">CNY – Nhân dân tệ</option>
+            <option value="KRW">KRW – Won HQ</option>
+            <option value="INR">INR – Rupee Ấn</option>
+            <option value="AUD">AUD – Đô-la Úc</option>
+            <option value="CAD">CAD – Đô-la CA</option>
+            <option value="RUB">RUB – Rúp Nga</option>
+            <option value="SAR">SAR – Riyal Saudi</option>
+            <option value="VND">VND – Đồng VN</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="conv-btn" onclick="convertCurrency()">⇄ QUY ĐỔI</button>
+      <div class="conv-result" id="convResult">Nhập số tiền và nhấn "Quy đổi" ...</div>
+    </div>
+  </div>
+</section>
+
+<!-- PHÂN BỐ THEO KHU VỰC -->
+<section class="section" style="background: var(--cream);">
+  <div class="container">
+    <div class="section-tag">Chương III</div>
+    <h2 class="section-title">Tiền Tệ Theo<br><em>Khu Vực</em></h2>
+    <p class="section-lead">Mỗi châu lục có những đặc điểm tiền tệ riêng biệt, phản ánh lịch sử và cấu trúc kinh tế của mỗi vùng đất.</p>
+
+    <div class="region-tabs" id="regionTabs">
+      <button class="tab-btn active" data-tab="asia">🌏 Châu Á</button>
+      <button class="tab-btn" data-tab="europe">🌍 Châu Âu</button>
+      <button class="tab-btn" data-tab="america">🌎 Châu Mỹ</button>
+      <button class="tab-btn" data-tab="africa">🌍 Châu Phi</button>
+      <button class="tab-btn" data-tab="middle">🕌 Trung Đông</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-asia">
+      <table class="data-table">
+        <thead><tr><th>Ký hiệu</th><th>Tên tiền tệ</th><th>Quốc gia</th><th>Tỷ giá với USD</th><th>Quy ra VND (1 đơn vị)</th></tr></thead>
+        <tbody>
+          <tr><td class="symbol">¥</td><td>Yên Nhật (JPY)</td><td>🇯🇵 Nhật Bản</td><td class="rate">1 USD ≈ 150 JPY</td><td class="rate">≈ 169 VND</td></tr>
+          <tr><td class="symbol">元</td><td>Nhân dân tệ (CNY)</td><td>🇨🇳 Trung Quốc</td><td class="rate">1 USD ≈ 7.24 CNY</td><td class="rate">≈ 3,508 VND</td></tr>
+          <tr><td class="symbol">₩</td><td>Won (KRW)</td><td>🇰🇷 Hàn Quốc</td><td class="rate">1 USD ≈ 1,340 KRW</td><td class="rate">≈ 18.9 VND</td></tr>
+          <tr><td class="symbol">₹</td><td>Rupee (INR)</td><td>🇮🇳 Ấn Độ</td><td class="rate">1 USD ≈ 83 INR</td><td class="rate">≈ 306 VND</td></tr>
+          <tr><td class="symbol">Rp</td><td>Rupiah (IDR)</td><td>🇮🇩 Indonesia</td><td class="rate">1 USD ≈ 15,700 IDR</td><td class="rate">≈ 1.6 VND</td></tr>
+          <tr><td class="symbol">฿</td><td>Baht (THB)</td><td>🇹🇭 Thái Lan</td><td class="rate">1 USD ≈ 35 THB</td><td class="rate">≈ 726 VND</td></tr>
+          <tr><td class="symbol">RM</td><td>Ringgit (MYR)</td><td>🇲🇾 Malaysia</td><td class="rate">1 USD ≈ 4.7 MYR</td><td class="rate">≈ 5,404 VND</td></tr>
+          <tr><td class="symbol">S$</td><td>Đô-la Singapore (SGD)</td><td>🇸🇬 Singapore</td><td class="rate">1 USD ≈ 1.34 SGD</td><td class="rate">≈ 18,955 VND</td></tr>
+          <tr><td class="symbol">₫</td><td>Đồng (VND)</td><td>🇻🇳 Việt Nam</td><td class="rate">1 USD ≈ 25,400 VND</td><td class="rate">= 1 VND</td></tr>
+          <tr><td class="symbol">₱</td><td>Peso (PHP)</td><td>🇵🇭 Philippines</td><td class="rate">1 USD ≈ 56 PHP</td><td class="rate">≈ 453 VND</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-europe">
+      <table class="data-table">
+        <thead><tr><th>Ký hiệu</th><th>Tên tiền tệ</th><th>Quốc gia/Khu vực</th><th>Tỷ giá với USD</th><th>Quy ra VND (1 đơn vị)</th></tr></thead>
+        <tbody>
+          <tr><td class="symbol">€</td><td>Euro (EUR)</td><td>🇪🇺 Eurozone</td><td class="rate">1 EUR ≈ 1.08 USD</td><td class="rate">≈ 27,400 VND</td></tr>
+          <tr><td class="symbol">£</td><td>Bảng Anh (GBP)</td><td>🇬🇧 Anh</td><td class="rate">1 GBP ≈ 1.27 USD</td><td class="rate">≈ 32,200 VND</td></tr>
+          <tr><td class="symbol">₽</td><td>Rúp (RUB)</td><td>🇷🇺 Nga</td><td class="rate">1 USD ≈ 89 RUB</td><td class="rate">≈ 285 VND</td></tr>
+          <tr><td class="symbol">Fr</td><td>Franc Thụy Sĩ (CHF)</td><td>🇨🇭 Thụy Sĩ</td><td class="rate">1 USD ≈ 0.89 CHF</td><td class="rate">≈ 28,540 VND</td></tr>
+          <tr><td class="symbol">kr</td><td>Krone Na Uy (NOK)</td><td>🇳🇴 Na Uy</td><td class="rate">1 USD ≈ 10.5 NOK</td><td class="rate">≈ 2,419 VND</td></tr>
+          <tr><td class="symbol">zł</td><td>Zloty (PLN)</td><td>🇵🇱 Ba Lan</td><td class="rate">1 USD ≈ 4.0 PLN</td><td class="rate">≈ 6,350 VND</td></tr>
+          <tr><td class="symbol">₺</td><td>Lira (TRY)</td><td>🇹🇷 Thổ Nhĩ Kỳ</td><td class="rate">1 USD ≈ 32 TRY</td><td class="rate">≈ 794 VND</td></tr>
+          <tr><td class="symbol">Kč</td><td>Koruna (CZK)</td><td>🇨🇿 Czech</td><td class="rate">1 USD ≈ 23 CZK</td><td class="rate">≈ 1,104 VND</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-america">
+      <table class="data-table">
+        <thead><tr><th>Ký hiệu</th><th>Tên tiền tệ</th><th>Quốc gia</th><th>Tỷ giá với USD</th><th>Quy ra VND (1 đơn vị)</th></tr></thead>
+        <tbody>
+          <tr><td class="symbol">$</td><td>Đô-la Mỹ (USD)</td><td>🇺🇸 Hoa Kỳ</td><td class="rate">= 1.00 USD</td><td class="rate">≈ 25,400 VND</td></tr>
+          <tr><td class="symbol">C$</td><td>Đô-la Canada (CAD)</td><td>🇨🇦 Canada</td><td class="rate">1 USD ≈ 1.35 CAD</td><td class="rate">≈ 18,800 VND</td></tr>
+          <tr><td class="symbol">R$</td><td>Real (BRL)</td><td>🇧🇷 Brazil</td><td class="rate">1 USD ≈ 4.97 BRL</td><td class="rate">≈ 5,110 VND</td></tr>
+          <tr><td class="symbol">$</td><td>Peso Mexico (MXN)</td><td>🇲🇽 Mexico</td><td class="rate">1 USD ≈ 17 MXN</td><td class="rate">≈ 1,494 VND</td></tr>
+          <tr><td class="symbol">$</td><td>Peso Argentina (ARS)</td><td>🇦🇷 Argentina</td><td class="rate">1 USD ≈ 850 ARS</td><td class="rate">≈ 29.9 VND</td></tr>
+          <tr><td class="symbol">CLP</td><td>Peso Chile (CLP)</td><td>🇨🇱 Chile</td><td class="rate">1 USD ≈ 940 CLP</td><td class="rate">≈ 27 VND</td></tr>
+          <tr><td class="symbol">COP</td><td>Peso Colombia (COP)</td><td>🇨🇴 Colombia</td><td class="rate">1 USD ≈ 3,950 COP</td><td class="rate">≈ 6.4 VND</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-africa">
+      <table class="data-table">
+        <thead><tr><th>Ký hiệu</th><th>Tên tiền tệ</th><th>Quốc gia</th><th>Tỷ giá với USD</th><th>Quy ra VND (1 đơn vị)</th></tr></thead>
+        <tbody>
+          <tr><td class="symbol">R</td><td>Rand (ZAR)</td><td>🇿🇦 Nam Phi</td><td class="rate">1 USD ≈ 18.8 ZAR</td><td class="rate">≈ 1,351 VND</td></tr>
+          <tr><td class="symbol">N</td><td>Naira (NGN)</td><td>🇳🇬 Nigeria</td><td class="rate">1 USD ≈ 1,500 NGN</td><td class="rate">≈ 16.9 VND</td></tr>
+          <tr><td class="symbol">Br</td><td>Birr (ETB)</td><td>🇪🇹 Ethiopia</td><td class="rate">1 USD ≈ 56 ETB</td><td class="rate">≈ 453 VND</td></tr>
+          <tr><td class="symbol">KSh</td><td>Shilling (KES)</td><td>🇰🇪 Kenya</td><td class="rate">1 USD ≈ 130 KES</td><td class="rate">≈ 195 VND</td></tr>
+          <tr><td class="symbol">EGP</td><td>Pound Ai Cập (EGP)</td><td>🇪🇬 Ai Cập</td><td class="rate">1 USD ≈ 31 EGP</td><td class="rate">≈ 819 VND</td></tr>
+          <tr><td class="symbol">GH₵</td><td>Cedi (GHS)</td><td>🇬🇭 Ghana</td><td class="rate">1 USD ≈ 12.5 GHS</td><td class="rate">≈ 2,032 VND</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-middle">
+      <table class="data-table">
+        <thead><tr><th>Ký hiệu</th><th>Tên tiền tệ</th><th>Quốc gia</th><th>Tỷ giá với USD</th><th>Quy ra VND (1 đơn vị)</th></tr></thead>
+        <tbody>
+          <tr><td class="symbol">﷼</td><td>Riyal Saudi (SAR)</td><td>🇸🇦 Ả Rập Saudi</td><td class="rate">3.75 SAR = 1 USD (cố định)</td><td class="rate">≈ 6,773 VND</td></tr>
+          <tr><td class="symbol">د.إ</td><td>Dirham (AED)</td><td>🇦🇪 UAE</td><td class="rate">3.67 AED = 1 USD (cố định)</td><td class="rate">≈ 6,921 VND</td></tr>
+          <tr><td class="symbol">₪</td><td>Shekel (ILS)</td><td>🇮🇱 Israel</td><td class="rate">1 USD ≈ 3.7 ILS</td><td class="rate">≈ 6,865 VND</td></tr>
+          <tr><td class="symbol">﷼</td><td>Riyal Qatar (QAR)</td><td>🇶🇦 Qatar</td><td class="rate">3.64 QAR = 1 USD (cố định)</td><td class="rate">≈ 6,978 VND</td></tr>
+          <tr><td class="symbol">KWD</td><td>Dinar Kuwait (KWD)</td><td>🇰🇼 Kuwait</td><td class="rate">1 KWD ≈ 3.25 USD</td><td class="rate">≈ 82,550 VND</td></tr>
+          <tr><td class="symbol">﷼</td><td>Rial Iran (IRR)</td><td>🇮🇷 Iran</td><td class="rate">1 USD ≈ 420,000 IRR</td><td class="rate">≈ 0.06 VND</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- USD DOMINANCE -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Phân tích</div>
+    <h2 class="section-title">Bá Quyền<br><em>Của Đồng USD</em></h2>
+
+    <div class="two-col">
+      <div class="reveal">
+        <div class="article-text">
+          <p>Sau Thế chiến II, qua Hiệp định Bretton Woods năm 1944, USD chính thức trở thành đồng tiền dự trữ quốc tế. Mọi đồng tiền khác được neo vào USD, và USD được neo vào vàng với tỷ giá cố định.</p>
+          <p>Năm 1971, Tổng thống Nixon tuyên bố chấm dứt chuẩn vàng — sự kiện gọi là "Nixon Shock". Nhưng thay vì sụp đổ, USD càng trở nên mạnh hơn qua thỏa thuận "petrodollar": dầu mỏ toàn cầu chỉ được giao dịch bằng USD.</p>
+        </div>
+        <div class="highlight-box">
+          <strong>⚠️ Thách thức hiện tại</strong>
+          Năm 2023, Trung Quốc và Saudi Arabia thực hiện giao dịch dầu bằng nhân dân tệ — lần đầu tiên phá vỡ truyền thống petrodollar. Khối BRICS đang thảo luận về việc tạo ra tiền tệ chung thay thế USD.
+        </div>
+      </div>
+      <div class="reveal" style="transition-delay:0.2s;">
+        <p style="font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:0.1em; margin-bottom:12px;">TỶ TRỌNG TRONG DỰ TRỮ NGOẠI TỆ TOÀN CẦU</p>
+        <div class="bar-chart" id="reserveChart">
+          <div class="bar-row"><span class="bar-label">USD</span><div class="bar-track"><div class="bar-fill" data-width="59"></div></div><span class="bar-value">59%</span></div>
+          <div class="bar-row"><span class="bar-label">EUR</span><div class="bar-track"><div class="bar-fill" data-width="20"></div></div><span class="bar-value">20%</span></div>
+          <div class="bar-row"><span class="bar-label">JPY</span><div class="bar-track"><div class="bar-fill" data-width="6"></div></div><span class="bar-value">6%</span></div>
+          <div class="bar-row"><span class="bar-label">GBP</span><div class="bar-track"><div class="bar-fill" data-width="5"></div></div><span class="bar-value">5%</span></div>
+          <div class="bar-row"><span class="bar-label">CNY</span><div class="bar-track"><div class="bar-fill" data-width="2.5"></div></div><span class="bar-value">2.5%</span></div>
+          <div class="bar-row"><span class="bar-label">Khác</span><div class="bar-track"><div class="bar-fill" data-width="7.5"></div></div><span class="bar-value">7.5%</span></div>
+        </div>
+        <p style="font-size:12px; color:var(--muted); font-style:italic; margin-top:8px;">Nguồn: IMF COFER, 2024</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SỰ THẬT THÚ VỊ -->
+<section class="section" style="background: var(--cream);">
+  <div class="container">
+    <div class="section-tag">Mở rộng</div>
+    <h2 class="section-title">Những Điều<br><em>Ít Ai Biết</em></h2>
+    <p class="section-lead">Thế giới tiền tệ ẩn chứa nhiều bí mật và câu chuyện thú vị hơn bạn nghĩ.</p>
+
+    <ul class="fact-list">
+      <li>
+        <strong>Đồng Dinar Kuwait — đắt giá nhất thế giới</strong>
+        1 KWD ≈ 3.25 USD. Kuwait không in nhiều tiền, không lạm phát, và xuất khẩu dầu mỏ khổng lồ giúp đồng tiền này luôn mạnh. Đây là đồng tiền có mệnh giá cao nhất so với USD trên thế giới.
+      </li>
+      <li>
+        <strong>Iran từng có lạm phát 40,000,000%</strong>
+        Zimbabwe năm 2008 là ví dụ siêu lạm phát kinh hoàng nhất: giá cả tăng gấp đôi mỗi 24 giờ. Chính phủ phải in tờ 100 nghìn tỷ đô-la Zimbabwe. Đây là thảm họa tiền tệ hiện đại tệ nhất lịch sử.
+      </li>
+      <li>
+        <strong>Tờ 500 Euro đã bị loại bỏ</strong>
+        Năm 2019, ECB ngừng in tờ 500 Euro vì bị tội phạm ưa thích để vận chuyển tiền mặt (500€ x 1000 tờ = 500,000€ chỉ nặng 1kg). Các tờ cũ vẫn hợp lệ nhưng sẽ không in thêm.
+      </li>
+      <li>
+        <strong>Singapore — đồng tiền an toàn nhất thế giới</strong>
+        Đô-la Singapore được trang bị hơn 20 tính năng chống giả mạo, bao gồm mực đổi màu, dải hologram, và hình ảnh ẩn. Tờ SGD polymer chịu được nước, dầu, và khó bị rách.
+      </li>
+      <li>
+        <strong>Tiền Việt Nam làm bằng nhựa polymer</strong>
+        Từ năm 2003, Việt Nam chuyển sang in tiền polymer — loại tiền bền gấp 4 lần tiền giấy thông thường, có thể tồn tại 10 năm. Việt Nam là một trong những quốc gia đầu tiên ở Đông Nam Á áp dụng công nghệ này.
+      </li>
+      <li>
+        <strong>Đồng Bitcoin có vốn hóa ngang ngửa nhiều quốc gia</strong>
+        Năm 2024, tổng vốn hóa Bitcoin vượt 1 nghìn tỷ USD — lớn hơn GDP của hầu hết các quốc gia trên thế giới. Chỉ khoảng 21 triệu Bitcoin sẽ tồn tại, so với hàng tỷ tỷ đô-la in hàng năm.
+      </li>
+      <li>
+        <strong>Franc Thụy Sĩ — đồng tiền an toàn 300 năm</strong>
+        CHF chưa bao giờ trải qua siêu lạm phát. Thụy Sĩ duy trì tỷ lệ dự trữ vàng cao nhất thế giới tính theo đầu người (hơn 1,000 tấn vàng cho 8 triệu dân). Ngân hàng trung ương Thụy Sĩ (SNB) độc lập hoàn toàn với chính phủ.
+      </li>
+      <li>
+        <strong>Đồng tiền chung ASEAN — giấc mơ chưa thành</strong>
+        Từ những năm 2000, ASEAN đã thảo luận về tiền tệ chung "ACU" theo mô hình Euro. Nhưng sự khác biệt quá lớn về kinh tế, chính trị giữa các thành viên (từ Singapore giàu đến Myanmar nghèo) khiến giấc mơ này vẫn còn xa vời.
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- TIỀN KỸ THUẬT SỐ -->
+<section class="section">
+  <div class="container">
+    <div class="section-tag">Tương lai</div>
+    <h2 class="section-title">Kỷ Nguyên Tiền<br><em>Kỹ Thuật Số</em></h2>
+
+    <div class="two-col">
+      <div class="article-text reveal">
+        <p>Thế kỷ XXI chứng kiến sự nổi lên của hai cuộc cách mạng tiền tệ song song: tiền mã hóa phi tập trung (crypto) và tiền kỹ thuật số của ngân hàng trung ương (CBDC).</p>
+        <p>Bitcoin ra đời năm 2009 sau cuộc khủng hoảng tài chính 2008 — như một phản ứng với hệ thống ngân hàng truyền thống. Không ai kiểm soát nó, không ngân hàng trung ương nào có thể in thêm. Nhưng giá trị biến động cực kỳ mạnh.</p>
+        <p>Trong khi đó, các ngân hàng trung ương đang phát triển CBDC — phiên bản số của tiền pháp định. Trung Quốc đã thử nghiệm e-CNY (đồng nhân dân tệ số) với hàng triệu người dùng. Việt Nam cũng đang nghiên cứu xây dựng khung pháp lý cho tài sản số.</p>
+      </div>
+      <div class="reveal" style="transition-delay:0.2s;">
+        <div class="pullquote" style="font-size:18px;">
+          "Câu hỏi không phải là liệu tiền kỹ thuật số có thay thế tiền mặt hay không — mà là khi nào và ai sẽ kiểm soát nó."
+          <cite>— Christine Lagarde, Chủ tịch ECB, 2023</cite>
+        </div>
+        <div class="highlight-box">
+          <strong>🌐 CBDC Trên Thế Giới (2024)</strong>
+          <br>• <strong>Bahamas</strong>: Sand Dollar — CBDC đầu tiên ra mắt chính thức (2020)
+          <br>• <strong>Nigeria</strong>: eNaira (2021) — châu Phi tiên phong
+          <br>• <strong>Trung Quốc</strong>: e-CNY — thử nghiệm tại 26 tỉnh thành
+          <br>• <strong>EU</strong>: Digital Euro — đang trong giai đoạn thiết kế
+          <br>• <strong>Mỹ</strong>: Fed vẫn đang nghiên cứu, chưa quyết định
+          <br>• <strong>Việt Nam</strong>: SBV đang xây dựng khung pháp lý
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">₮ TIỀN TỆ TOÀN CẦU</div>
+  <div>Báo chuyên đề tài chính quốc tế · Phiên bản giáo dục</div>
+  <div style="margin-top:8px; opacity:0.6;">Tỷ giá tham khảo — không dùng cho mục đích giao dịch tài chính thực tế</div>
+  <div style="margin-top:16px; letter-spacing:0.2em; opacity:0.4;">$ € ¥ £ ₹ ₩ ₽ ₫ ₺ ₿</div>
+</footer>
+
+<script>
+// ─── RATES (USD base) ───
+const rates = {
+  USD: 1,
+  EUR: 0.925,
+  JPY: 150,
+  GBP: 0.787,
+  CNY: 7.24,
+  KRW: 1340,
+  INR: 83,
+  AUD: 1.54,
+  CAD: 1.35,
+  RUB: 89,
+  SAR: 3.75,
+  VND: 25400
+};
+
+const names = {
+  USD:'Đô-la Mỹ', EUR:'Euro', JPY:'Yên Nhật', GBP:'Bảng Anh',
+  CNY:'Nhân dân tệ', KRW:'Won Hàn Quốc', INR:'Rupee Ấn Độ',
+  AUD:'Đô-la Úc', CAD:'Đô-la Canada', RUB:'Rúp Nga',
+  SAR:'Riyal Saudi', VND:'Đồng Việt Nam'
+};
+
+function convertCurrency() {
+  const amount = parseFloat(document.getElementById('convAmount').value);
+  const from   = document.getElementById('convFrom').value;
+  const to     = document.getElementById('convTo').value;
+  const result = document.getElementById('convResult');
+
+  if (isNaN(amount) || amount < 0) {
+    result.textContent = '⚠ Vui lòng nhập số tiền hợp lệ.';
+    return;
+  }
+
+  const usd       = amount / rates[from];
+  const converted = usd * rates[to];
+  const fmt = (n) => n >= 1000
+    ? n.toLocaleString('vi-VN', {maximumFractionDigits: 2})
+    : n.toLocaleString('vi-VN', {maximumFractionDigits: 4});
+
+  result.innerHTML =
+    `<strong>${fmt(amount)} ${from}</strong> (${names[from]})<br>= <span style="color:var(--gold-light); font-size:1.3em;">${fmt(converted)} ${to}</span> (${names[to]})`;
+
+  result.classList.remove('pop');
+  void result.offsetWidth;
+  result.classList.add('pop');
+}
+
+// Also convert on Enter
+document.getElementById('convAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') convertCurrency();
+});
+
+// ─── TABS ───
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  });
+});
+
+// ─── SCROLL REVEAL ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 80);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal, .timeline-item, .currency-card, .fact-list li').forEach(el => {
+  observer.observe(el);
+});
+
+// ─── BAR CHART ANIMATE ───
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+      barObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+const chart = document.getElementById('reserveChart');
+if (chart) barObserver.observe(chart);
+</script>
+</body>
+</html>
